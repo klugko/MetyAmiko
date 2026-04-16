@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.database import SessionLocal
 from app.models.cv import CV, CVStatus
 from app.models.matching import Matching
-from app.models.offer import Offer, OfferSkill
+from app.models.offer import Offer
 
 logger = logging.getLogger(__name__)
 

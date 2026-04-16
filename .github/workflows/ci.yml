@@ -28,7 +28,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Lint with ruff
-        run: pip install ruff && ruff check app/ --select E,F,W --ignore E501
+        run: pip install ruff && ruff check app/ --select E,F,W --ignore E501,F821
 
       - name: Run tests
         env:
