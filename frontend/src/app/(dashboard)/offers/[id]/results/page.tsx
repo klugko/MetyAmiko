@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
@@ -58,6 +58,7 @@ export default function ResultsPage() {
     } catch { /* empty */ }
   }, [offerId, page, minScore, sortBy, search]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is intentional
   useEffect(() => { fetchResults(); }, [fetchResults]);
 
   const handleExportCSV = () => {

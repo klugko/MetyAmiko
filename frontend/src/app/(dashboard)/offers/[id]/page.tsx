@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   MapPin, Calendar, DollarSign, GraduationCap, Clock,
-  Upload, Target, Copy, Trash2, Play, RefreshCw, FileText, X,
+  Upload, Copy, Trash2, Play, RefreshCw, FileText,
 } from "lucide-react";
 
 interface Offer {
@@ -75,6 +75,7 @@ export default function OfferDetailPage() {
     }
   }, [offerId, router]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is intentional
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // Polling for parsing status

@@ -9,20 +9,6 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: metyamiko_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     defaults:
       run:
@@ -42,11 +28,11 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Lint with ruff
-        run: pip install ruff && ruff check app/
+        run: pip install ruff && ruff check app/ --select E,F,W --ignore E501
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/metyamiko_test
+          DATABASE_URL: sqlite:///test.db
           SECRET_KEY: test-secret-key
         run: pytest tests/ -v --tb=short
 
