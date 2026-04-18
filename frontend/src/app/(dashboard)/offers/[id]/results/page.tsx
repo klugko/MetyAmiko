@@ -1,34 +1,66 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import api from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Download, ChevronLeft, ChevronRight, Check, AlertTriangle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Search,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  AlertTriangle,
+  Crown,
+  ArrowLeft,
+  Sparkles,
+} from "lucide-react";
+import {
+  BentoEyebrow,
+  BentoTile,
+  BentoTitle,
+} from "@/components/design/bento";
+import { ScoreRing, ScoreBar } from "@/components/design/score-ring";
+import { cn } from "@/lib/utils";
 
 interface MatchItem {
-  id: number; cv_id: number; overall_score: number; skill_score: number;
-  experience_score: number; relevance_score: number; candidate_name: string | null;
-  candidate_email: string | null; file_name: string | null;
-  ai_summary: string | null; strengths: string[] | null; weaknesses: string[] | null;
+  id: number;
+  cv_id: number;
+  overall_score: number;
+  skill_score: number;
+  experience_score: number;
+  relevance_score: number;
+  candidate_name: string | null;
+  candidate_email: string | null;
+  file_name: string | null;
+  ai_summary: string | null;
+  strengths: string[] | null;
+  weaknesses: string[] | null;
 }
 
-function scoreColor(score: number) {
-  if (score >= 75) return "bg-emerald-500/20 text-emerald-400";
-  if (score >= 50) return "bg-amber-500/20 text-amber-400";
-  return "bg-red-500/20 text-red-400";
+function tierBg(score: number): string {
+  if (score >= 75) return "bg-lime-soft text-jade";
+  if (score >= 50) return "bg-amber-soft text-amber";
+  return "bg-crimson-soft text-crimson";
 }
 
-function scoreBg(score: number) {
-  if (score >= 75) return "bg-emerald-500";
-  if (score >= 50) return "bg-amber-500";
-  return "bg-red-500";
+function initials(name: string | null) {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export default function ResultsPage() {
@@ -44,30 +76,54 @@ export default function ResultsPage() {
 
   const fetchResults = useCallback(async () => {
     try {
-      const params: Record<string, string | number> = { page, page_size: 20, sort_by: sortBy };
+      const params: Record<string, string | number> = {
+        page,
+        page_size: 20,
+        sort_by: sortBy,
+      };
       if (minScore > 0) params.min_score = minScore;
       const res = await api.get(`/offers/${offerId}/matchings`, { params });
       let items = res.data.items;
       if (search) {
         items = items.filter((m: MatchItem) =>
-          (m.candidate_name || "").toLowerCase().includes(search.toLowerCase())
+          (m.candidate_name || "").toLowerCase().includes(search.toLowerCase()),
         );
       }
       setMatchings(items);
       setTotal(res.data.total);
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
   }, [offerId, page, minScore, sortBy, search]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount is intentional
-  useEffect(() => { fetchResults(); }, [fetchResults]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data fetching on mount
+    fetchResults();
+  }, [fetchResults]);
 
   const handleExportCSV = () => {
-    const headers = ["Rang", "Candidat", "Score Global", "Compétences", "Expérience", "Pertinence", "Résumé"];
+    const headers = [
+      "Rang",
+      "Candidat",
+      "Score Global",
+      "Compétences",
+      "Expérience",
+      "Pertinence",
+      "Résumé",
+    ];
     const rows = matchings.map((m, i) => [
-      i + 1, m.candidate_name || "Inconnu", m.overall_score,
-      m.skill_score, m.experience_score, m.relevance_score, m.ai_summary || "",
+      i + 1,
+      m.candidate_name || "Inconnu",
+      m.overall_score,
+      m.skill_score,
+      m.experience_score,
+      m.relevance_score,
+      m.ai_summary || "",
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${v}"`).join(","))].join("\n");
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) => r.map((v) => `"${v}"`).join(",")),
+    ].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -77,136 +133,470 @@ export default function ResultsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const podium = matchings.slice(0, 3);
+  const rest = matchings.slice(3);
+
+  const sortTabs: { key: string; label: string }[] = [
+    { key: "overall_score", label: "Global" },
+    { key: "skill_score", label: "Compétences" },
+    { key: "experience_score", label: "Expérience" },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Résultats Matching</h1>
-          <p className="mt-1 text-slate-400">{total} candidat{total !== 1 ? "s" : ""} évalué{total !== 1 ? "s" : ""}</p>
+    <div className="space-y-7">
+      {/* Header */}
+      <header className="animate-rise">
+        <Link
+          href={`/offers/${offerId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-ink-faint hover:text-ink transition-colors focus-ring rounded-full px-2 py-1"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Retour à l&rsquo;offre
+        </Link>
+
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <BentoEyebrow>
+              <Sparkles className="h-3 w-3 text-indigo-deep" /> Classement IA
+            </BentoEyebrow>
+            <h1 className="mt-3 font-display text-[clamp(2.25rem,4.5vw,3.25rem)] leading-[1.02] tracking-[-0.015em]">
+              Les meilleurs candidats, <span className="italic text-indigo-deep">par score</span>.
+            </h1>
+            <p className="mt-2 text-ink-soft tabular">
+              {total} candidat{total !== 1 ? "s" : ""} évalué
+              {total !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <button
+            onClick={handleExportCSV}
+            disabled={matchings.length === 0}
+            className="inline-flex h-11 items-center gap-2 rounded-full border border-hairline bg-surface px-5 text-sm font-medium text-ink shadow-soft hover:bg-surface-sunk disabled:opacity-50 focus-ring transition-colors"
+          >
+            <Download className="h-4 w-4" /> Export CSV
+          </button>
         </div>
-        <Button variant="outline" onClick={handleExportCSV} className="border-slate-700 text-slate-300">
-          <Download className="mr-2 h-4 w-4" />Export CSV
-        </Button>
+      </header>
+
+      {/* Filter bar */}
+      <div className="bento-tile flex flex-wrap items-center gap-4 p-4 sm:p-5">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
+          <Input
+            placeholder="Rechercher un candidat…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-11 rounded-full border-hairline bg-surface-sunk pl-11 focus-visible:border-indigo focus-visible:ring-indigo/20"
+          />
+        </div>
+        <div className="flex min-w-[220px] flex-col gap-1.5">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-ink-faint tabular">
+            Score min&nbsp;·&nbsp;{minScore}%
+          </p>
+          <Slider
+            value={[minScore]}
+            onValueChange={(v) =>
+              setMinScore(Array.isArray(v) ? v[0] : v)
+            }
+            min={0}
+            max={100}
+            step={5}
+          />
+        </div>
+        <div className="inline-flex rounded-full border border-hairline bg-surface-sunk p-1 text-sm">
+          {sortTabs.map((tab) => {
+            const active = sortBy === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setSortBy(tab.key)}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 transition-all focus-ring",
+                  active
+                    ? "bg-ink text-white shadow-soft"
+                    : "text-ink-soft hover:text-ink",
+                )}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <Card className="border-slate-800 bg-slate-900/50">
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                <Input placeholder="Rechercher un candidat..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 border-slate-700 bg-slate-800/50 text-white" />
+      {matchings.length === 0 ? (
+        <BentoTile size="wide" tone="indigo">
+          <BentoEyebrow>En attente</BentoEyebrow>
+          <BentoTitle className="mt-3 text-xl">
+            Aucun résultat pour ces filtres.
+          </BentoTitle>
+          <p className="mt-3 text-sm text-ink-soft">
+            Essayez de baisser le score minimum ou de changer le tri. Si vous
+            n&rsquo;avez pas encore lancé le matching, rendez-vous sur la page de
+            l&rsquo;offre.
+          </p>
+        </BentoTile>
+      ) : (
+        <>
+          {/* Podium — top 3 */}
+          {podium.length > 0 && page === 1 && !search && minScore === 0 ? (
+            <section className="grid gap-4 lg:grid-cols-12 lg:gap-5 stagger">
+              {podium[1] ? (
+                <PodiumCard
+                  rank={2}
+                  match={podium[1]}
+                  onOpen={() => setSelectedMatch(podium[1])}
+                  className="lg:col-span-4 lg:order-1 lg:mt-8"
+                  accent="indigo"
+                />
+              ) : null}
+              {podium[0] ? (
+                <PodiumCard
+                  rank={1}
+                  match={podium[0]}
+                  onOpen={() => setSelectedMatch(podium[0])}
+                  className="lg:col-span-4 lg:order-2"
+                  accent="winner"
+                  featured
+                />
+              ) : null}
+              {podium[2] ? (
+                <PodiumCard
+                  rank={3}
+                  match={podium[2]}
+                  onOpen={() => setSelectedMatch(podium[2])}
+                  className="lg:col-span-4 lg:order-3 lg:mt-14"
+                  accent="coral"
+                />
+              ) : null}
+            </section>
+          ) : null}
+
+          {/* Ranked list — everyone else, or full list when filters active */}
+          {(rest.length > 0 ||
+            page > 1 ||
+            search ||
+            minScore > 0) && (
+            <section>
+              {page === 1 && !search && minScore === 0 && rest.length > 0 ? (
+                <div className="mb-4 flex items-center gap-3 px-1">
+                  <BentoEyebrow>Suite du classement</BentoEyebrow>
+                  <span className="h-px flex-1 bg-hairline" />
+                </div>
+              ) : null}
+              <div className="bento-tile divide-y divide-hairline p-0">
+                {(search || minScore > 0 || page > 1 ? matchings : rest).map(
+                  (m, i) => {
+                    const rank =
+                      search || minScore > 0 || page > 1
+                        ? (page - 1) * 20 + i + 1
+                        : i + 4;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => setSelectedMatch(m)}
+                        className="group flex w-full items-center gap-4 px-5 py-4 sm:px-6 text-left transition-colors hover:bg-surface-sunk focus-ring"
+                      >
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-sunk font-display text-base tabular text-ink">
+                          {rank}
+                        </span>
+                        <span
+                          aria-hidden
+                          className="hidden h-10 w-10 items-center justify-center rounded-full bg-indigo-soft text-indigo-deep font-medium sm:inline-flex"
+                        >
+                          {initials(m.candidate_name)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[15px] font-medium text-ink">
+                            {m.candidate_name || `CV #${m.cv_id}`}
+                          </p>
+                          {m.ai_summary ? (
+                            <p className="mt-0.5 line-clamp-1 text-sm text-ink-soft italic">
+                              «&nbsp;{m.ai_summary}&nbsp;»
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="hidden items-center gap-3 md:flex">
+                          <SubScore label="Skl." value={m.skill_score} />
+                          <SubScore label="Exp." value={m.experience_score} />
+                          <SubScore label="Rel." value={m.relevance_score} />
+                        </div>
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 font-display text-lg tabular",
+                            tierBg(m.overall_score),
+                          )}
+                        >
+                          {m.overall_score}
+                          <span className="text-xs">/100</span>
+                        </span>
+                      </button>
+                    );
+                  },
+                )}
               </div>
-            </div>
-            <div className="w-48">
-              <p className="text-xs text-slate-400 mb-1">Score minimum: {minScore}%</p>
-              <Slider value={[minScore]} onValueChange={(v) => setMinScore(Array.isArray(v) ? v[0] : v)} min={0} max={100} step={5} />
-            </div>
-            <div className="flex gap-1">
-              {["overall_score", "skill_score", "experience_score"].map((key) => (
-                <Button key={key} variant={sortBy === key ? "default" : "outline"} size="sm"
-                  onClick={() => setSortBy(key)}
-                  className={sortBy === key ? "bg-indigo-600 text-white" : "border-slate-700 text-slate-400"}>
-                  {key === "overall_score" ? "Global" : key === "skill_score" ? "Compétences" : "Expérience"}
-                </Button>
-              ))}
+            </section>
+          )}
+        </>
+      )}
+
+      {/* Pagination */}
+      {total > 20 && (
+        <nav className="flex items-center justify-center gap-1">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface text-ink-soft disabled:opacity-40 hover:bg-surface-sunk focus-ring"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="mx-3 text-sm tabular text-ink-soft">
+            Page {page} / {Math.ceil(total / 20)}
+          </span>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page >= Math.ceil(total / 20)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface text-ink-soft disabled:opacity-40 hover:bg-surface-sunk focus-ring"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </nav>
+      )}
+
+      {/* Detail dialog */}
+      <Dialog
+        open={!!selectedMatch}
+        onOpenChange={(open) => !open && setSelectedMatch(null)}
+      >
+        <DialogContent className="max-w-2xl overflow-hidden border-hairline bg-surface p-0">
+          {selectedMatch && <MatchDetail match={selectedMatch} />}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function PodiumCard({
+  rank,
+  match,
+  onOpen,
+  className,
+  accent,
+  featured,
+}: {
+  rank: number;
+  match: MatchItem;
+  onOpen: () => void;
+  className?: string;
+  accent: "winner" | "indigo" | "coral";
+  featured?: boolean;
+}) {
+  const tone =
+    accent === "winner" ? "mesh-accent-lime" : accent === "coral" ? "mesh-accent-coral" : "mesh-accent";
+  return (
+    <button
+      onClick={onOpen}
+      className={cn(
+        "bento-tile bento-tile-interactive text-left p-6 sm:p-7 focus-ring",
+        tone,
+        className,
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium tabular",
+              featured
+                ? "bg-ink text-white"
+                : "bg-white/70 text-ink",
+            )}
+          >
+            {featured ? <Crown className="h-3.5 w-3.5" /> : null}
+            #{rank}
+          </span>
+          {featured ? (
+            <span className="inline-flex h-9 items-center rounded-full bg-white/70 px-3 text-[11px] uppercase tracking-[0.18em] text-jade">
+              Meilleur candidat
+            </span>
+          ) : null}
+        </div>
+        <ScoreRing
+          score={match.overall_score}
+          size={featured ? 108 : 84}
+          strokeWidth={featured ? 10 : 8}
+        />
+      </div>
+
+      <div className="mt-6">
+        <p
+          className={cn(
+            "font-display tracking-[-0.015em]",
+            featured ? "text-[2.25rem] leading-[1.05]" : "text-[1.5rem] leading-[1.1]",
+          )}
+        >
+          {match.candidate_name || `CV #${match.cv_id}`}
+        </p>
+        {match.ai_summary ? (
+          <p
+            className={cn(
+              "mt-3 text-sm text-ink-soft italic",
+              featured ? "line-clamp-3" : "line-clamp-2",
+            )}
+          >
+            «&nbsp;{match.ai_summary}&nbsp;»
+          </p>
+        ) : null}
+      </div>
+
+      <dl className="mt-6 grid grid-cols-3 gap-2.5">
+        {[
+          { label: "Skills", value: match.skill_score },
+          { label: "Exp.", value: match.experience_score },
+          { label: "Relev.", value: match.relevance_score },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className="rounded-2xl bg-white/75 px-3 py-2.5 backdrop-blur"
+          >
+            <dt className="text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+              {s.label}
+            </dt>
+            <dd className="mt-1 font-display tabular text-lg leading-none text-ink">
+              {s.value}
+            </dd>
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-hairline">
+              <div
+                className="h-full rounded-full bg-indigo-deep"
+                style={{ width: `${s.value}%` }}
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </dl>
+    </button>
+  );
+}
 
-      <div className="space-y-2">
-        {matchings.map((m, i) => (
-          <Card key={m.id} className="border-slate-800 bg-slate-900/50 transition-colors hover:border-slate-700 cursor-pointer" onClick={() => setSelectedMatch(m)}>
-            <CardContent className="flex items-center gap-4 py-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-slate-400">
-                #{(page - 1) * 20 + i + 1}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-white truncate">{m.candidate_name || `CV #${m.cv_id}`}</p>
-                {m.ai_summary && <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{m.ai_summary}</p>}
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <div className="text-center w-16"><p className="text-xs text-slate-500">Skills</p><p className="font-medium text-slate-300">{m.skill_score}%</p></div>
-                <div className="text-center w-16"><p className="text-xs text-slate-500">Exp.</p><p className="font-medium text-slate-300">{m.experience_score}%</p></div>
-                <div className="text-center w-16"><p className="text-xs text-slate-500">Relev.</p><p className="font-medium text-slate-300">{m.relevance_score}%</p></div>
-              </div>
-              <Badge className={`text-lg font-bold px-3 py-1 ${scoreColor(m.overall_score)}`}>
-                {m.overall_score}%
-              </Badge>
-            </CardContent>
-          </Card>
+function SubScore({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="w-16 text-center">
+      <p className="text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+        {label}
+      </p>
+      <p className="mt-0.5 font-display tabular text-base leading-none text-ink">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MatchDetail({ match }: { match: MatchItem }) {
+  return (
+    <div className="space-y-5 p-6 sm:p-7">
+      <DialogHeader className="space-y-2 text-left">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-ink-faint">
+          <Sparkles className="h-3 w-3 text-indigo-deep" /> Analyse détaillée
+        </div>
+        <DialogTitle className="font-display text-[2rem] leading-[1.05] tracking-[-0.015em]">
+          {match.candidate_name || `CV #${match.cv_id}`}
+        </DialogTitle>
+        {match.candidate_email ? (
+          <p className="text-sm text-ink-soft">{match.candidate_email}</p>
+        ) : null}
+      </DialogHeader>
+
+      {/* Score breakdown */}
+      <div className="grid grid-cols-2 gap-4 rounded-2xl bg-surface-sunk p-5 sm:grid-cols-4">
+        {[
+          { label: "Global", score: match.overall_score, feature: true },
+          { label: "Compétences", score: match.skill_score },
+          { label: "Expérience", score: match.experience_score },
+          { label: "Pertinence", score: match.relevance_score },
+        ].map((s) => (
+          <div key={s.label} className="text-center">
+            {s.feature ? (
+              <ScoreRing score={s.score} size={104} strokeWidth={10} label={s.label} />
+            ) : (
+              <>
+                <p className="font-display tabular text-[2rem] leading-none">
+                  {s.score}
+                  <span className="text-sm text-ink-faint">%</span>
+                </p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+                  {s.label}
+                </p>
+                <div className="mt-3 h-1 rounded-full bg-hairline">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${s.score}%`,
+                      background:
+                        s.score >= 75
+                          ? "var(--jade)"
+                          : s.score >= 50
+                            ? "oklch(0.62 0.16 75)"
+                            : "var(--crimson)",
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
         ))}
       </div>
 
-      {total > 20 && (
-        <div className="flex justify-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="border-slate-700 text-slate-300"><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="flex items-center px-3 text-sm text-slate-400">Page {page} / {Math.ceil(total / 20)}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page >= Math.ceil(total / 20)} className="border-slate-700 text-slate-300"><ChevronRight className="h-4 w-4" /></Button>
+      {/* AI summary */}
+      {match.ai_summary ? (
+        <div className="rounded-2xl border border-hairline p-5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">
+            Résumé IA
+          </p>
+          <p className="mt-2 text-[15px] leading-relaxed text-ink italic">
+            «&nbsp;{match.ai_summary}&nbsp;»
+          </p>
         </div>
-      )}
+      ) : null}
 
-      <Dialog open={!!selectedMatch} onOpenChange={() => setSelectedMatch(null)}>
-        <DialogContent className="max-w-2xl border-slate-700 bg-slate-900 text-white">
-          {selectedMatch && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-xl">{selectedMatch.candidate_name || `CV #${selectedMatch.cv_id}`}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-3">
-                  {[
-                    { label: "Global", score: selectedMatch.overall_score },
-                    { label: "Compétences", score: selectedMatch.skill_score },
-                    { label: "Expérience", score: selectedMatch.experience_score },
-                    { label: "Pertinence", score: selectedMatch.relevance_score },
-                  ].map((s) => (
-                    <div key={s.label} className="text-center rounded-lg bg-slate-800/50 p-3">
-                      <p className="text-xs text-slate-400">{s.label}</p>
-                      <p className={`text-2xl font-bold ${s.score >= 75 ? "text-emerald-400" : s.score >= 50 ? "text-amber-400" : "text-red-400"}`}>{s.score}%</p>
-                      <div className="mt-2 h-1.5 rounded-full bg-slate-700"><div className={`h-full rounded-full ${scoreBg(s.score)}`} style={{ width: `${s.score}%` }} /></div>
-                    </div>
-                  ))}
-                </div>
-                {selectedMatch.ai_summary && (
-                  <div className="rounded-lg bg-slate-800/50 p-4">
-                    <p className="text-sm font-medium text-slate-300 mb-2">Résumé IA</p>
-                    <p className="text-sm text-slate-400">{selectedMatch.ai_summary}</p>
-                  </div>
-                )}
-                <Separator className="bg-slate-800" />
-                <div className="grid grid-cols-2 gap-4">
-                  {selectedMatch.strengths && selectedMatch.strengths.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-emerald-400 mb-2">Points forts</p>
-                      <ul className="space-y-1.5">
-                        {selectedMatch.strengths.map((s, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                            <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />{s}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {selectedMatch.weaknesses && selectedMatch.weaknesses.length > 0 && (
-                    <div>
-                      <p className="text-sm font-medium text-amber-400 mb-2">Points faibles</p>
-                      <ul className="space-y-1.5">
-                        {selectedMatch.weaknesses.map((w, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />{w}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Strengths + Weaknesses */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {match.strengths && match.strengths.length > 0 ? (
+          <div className="rounded-2xl bg-lime-soft p-5">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-jade">
+              Points forts
+            </p>
+            <ul className="mt-3 space-y-2">
+              {match.strengths.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-ink">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-jade" />
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {match.weaknesses && match.weaknesses.length > 0 ? (
+          <div className="rounded-2xl bg-amber-soft p-5">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-amber">
+              Points faibles
+            </p>
+            <ul className="mt-3 space-y-2">
+              {match.weaknesses.map((w, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-ink">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber" />
+                  <span>{w}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Detailed bars */}
+      <div className="space-y-4 border-t border-hairline pt-5">
+        <ScoreBar label="Compétences" score={match.skill_score} />
+        <ScoreBar label="Expérience" score={match.experience_score} />
+        <ScoreBar label="Pertinence" score={match.relevance_score} />
+      </div>
     </div>
   );
 }

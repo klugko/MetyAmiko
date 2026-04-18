@@ -3,11 +3,20 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, MapPin, Calendar, Users } from "lucide-react";
+import {
+  Plus,
+  Search,
+  MapPin,
+  Calendar,
+  Users,
+  ArrowUpRight,
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { BentoEyebrow } from "@/components/design/bento";
+import { cn } from "@/lib/utils";
 
 interface Offer {
   id: number;
@@ -20,12 +29,12 @@ interface Offer {
   skills: { skill_name: string; weight: number }[];
 }
 
-const statusColors: Record<string, string> = {
-  draft: "bg-slate-500/20 text-slate-300",
-  active: "bg-emerald-500/20 text-emerald-400",
-  paused: "bg-amber-500/20 text-amber-400",
-  closed: "bg-red-500/20 text-red-400",
-  archived: "bg-slate-600/20 text-slate-500",
+const statusStyles: Record<string, string> = {
+  draft: "bg-surface-sunk text-ink-soft",
+  active: "bg-lime-soft text-jade",
+  paused: "bg-amber-soft text-amber",
+  closed: "bg-crimson-soft text-crimson",
+  archived: "bg-surface-sunk text-ink-faint",
 };
 
 const statusLabels: Record<string, string> = {
@@ -37,7 +46,12 @@ const statusLabels: Record<string, string> = {
 };
 
 const contractLabels: Record<string, string> = {
-  cdi: "CDI", cdd: "CDD", freelance: "Freelance", stage: "Stage", alternance: "Alternance", interim: "Intérim",
+  cdi: "CDI",
+  cdd: "CDD",
+  freelance: "Freelance",
+  stage: "Stage",
+  alternance: "Alternance",
+  interim: "Intérim",
 };
 
 export default function OffersPage() {
@@ -55,7 +69,9 @@ export default function OffersPage() {
       const res = await api.get("/offers", { params });
       setOffers(res.data.items);
       setTotal(res.data.total);
-    } catch { /* empty */ }
+    } catch {
+      /* empty */
+    }
     setLoading(false);
   }, [page, search]);
 
@@ -65,101 +81,190 @@ export default function OffersPage() {
   }, [fetchOffers]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-7">
+      {/* Header */}
+      <header className="flex flex-wrap items-end justify-between gap-4 animate-rise">
         <div>
-          <h1 className="text-3xl font-bold text-white">Mes offres</h1>
-          <p className="mt-1 text-slate-400">{total} offre{total !== 1 ? "s" : ""} au total</p>
+          <BentoEyebrow>Portfolio</BentoEyebrow>
+          <h1 className="mt-3 font-display text-[clamp(2.25rem,4.5vw,3.25rem)] leading-[1.02] tracking-[-0.015em]">
+            Mes <span className="italic text-indigo-deep">offres</span>
+          </h1>
+          <p className="mt-2 text-ink-soft tabular">
+            {total} offre{total !== 1 ? "s" : ""} au total
+          </p>
         </div>
-        <Link href="/offers/new">
-          <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">
-            <Plus className="mr-2 h-4 w-4" /> Nouvelle offre
-          </Button>
+        <Link
+          href="/offers/new"
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white shadow-soft transition-transform hover:-translate-y-px focus-ring"
+        >
+          <Plus className="h-4 w-4" /> Nouvelle offre
         </Link>
-      </div>
+      </header>
 
+      {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
         <Input
-          placeholder="Rechercher par titre ou description..."
+          placeholder="Rechercher par titre, description, localisation…"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="pl-10 border-slate-700 bg-slate-900/50 text-white placeholder:text-slate-500"
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className="h-13 rounded-full border-hairline bg-surface pl-12 pr-5 text-base shadow-soft placeholder:text-ink-faint focus-visible:border-indigo focus-visible:ring-indigo/20"
         />
       </div>
 
+      {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+        <div className="grid gap-5 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-44 rounded-3xl bg-surface-sunk overflow-hidden relative"
+            >
+              <div className="shimmer absolute inset-0" />
+            </div>
+          ))}
         </div>
       ) : offers.length === 0 ? (
-        <Card className="border-slate-800 bg-slate-900/50">
-          <CardContent className="flex flex-col items-center py-16">
-            <Briefcase className="h-12 w-12 text-slate-600 mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Aucune offre</h3>
-            <p className="text-slate-400 mb-6">Créez votre première offre pour commencer</p>
-            <Link href="/offers/new">
-              <Button className="bg-indigo-600 hover:bg-indigo-500 text-white">
-                <Plus className="mr-2 h-4 w-4" /> Créer une offre
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <EmptyState />
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-5 sm:grid-cols-2">
           {offers.map((offer) => (
-            <Link key={offer.id} href={`/offers/${offer.id}`}>
-              <Card className="border-slate-800 bg-slate-900/50 transition-colors hover:border-slate-700 hover:bg-slate-800/50 cursor-pointer mb-3">
-                <CardContent className="flex items-center justify-between py-5">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-white">{offer.title}</h3>
-                      <Badge className={statusColors[offer.status]}>{statusLabels[offer.status]}</Badge>
-                      <Badge variant="outline" className="border-slate-600 text-slate-400">{contractLabels[offer.contract_type] || offer.contract_type}</Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-slate-400">
-                      {offer.location && (
-                        <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{offer.location}</span>
-                      )}
-                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{new Date(offer.created_at).toLocaleDateString("fr-FR")}</span>
-                      <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{offer.cv_count} CV</span>
-                    </div>
-                    {offer.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {offer.skills.slice(0, 5).map((s) => (
-                          <Badge key={s.skill_name} variant="outline" className="border-indigo-500/30 text-indigo-400 text-xs">
-                            {s.skill_name}
-                          </Badge>
-                        ))}
-                        {offer.skills.length > 5 && (
-                          <Badge variant="outline" className="border-slate-600 text-slate-500 text-xs">+{offer.skills.length - 5}</Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+            <OfferTile key={offer.id} offer={offer} />
           ))}
         </div>
       )}
 
+      {/* Pagination */}
       {total > 10 && (
-        <div className="flex justify-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="border-slate-700 text-slate-300">Précédent</Button>
-          <span className="flex items-center px-3 text-sm text-slate-400">Page {page} / {Math.ceil(total / 10)}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page >= Math.ceil(total / 10)} className="border-slate-700 text-slate-300">Suivant</Button>
-        </div>
+        <nav className="flex items-center justify-center gap-1 pt-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface text-ink-soft disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-sunk focus-ring"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="mx-3 text-sm tabular text-ink-soft">
+            Page {page} / {Math.ceil(total / 10)}
+          </span>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page >= Math.ceil(total / 10)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-surface text-ink-soft disabled:opacity-40 disabled:cursor-not-allowed hover:bg-surface-sunk focus-ring"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </nav>
       )}
     </div>
   );
 }
 
-function Briefcase(props: React.SVGProps<SVGSVGElement>) {
+function OfferTile({ offer }: { offer: Offer }) {
+  const statusStyle = statusStyles[offer.status] ?? statusStyles.draft;
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-    </svg>
+    <Link
+      href={`/offers/${offer.id}`}
+      className="bento-tile bento-tile-interactive flex flex-col justify-between p-6 focus-ring"
+    >
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">
+              {contractLabels[offer.contract_type] || offer.contract_type}
+            </p>
+            <h3 className="mt-2 font-display text-[1.6rem] leading-[1.1] tracking-[-0.015em] text-ink">
+              {offer.title}
+            </h3>
+          </div>
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
+              statusStyle,
+            )}
+          >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                offer.status === "active" ? "bg-jade" : "bg-current opacity-60",
+              )}
+            />
+            {statusLabels[offer.status] ?? offer.status}
+          </span>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-ink-soft">
+          {offer.location ? (
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              {offer.location}
+            </span>
+          ) : null}
+          <span className="inline-flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            {new Date(offer.created_at).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
+          </span>
+          <span className="inline-flex items-center gap-1.5 tabular">
+            <Users className="h-3.5 w-3.5" />
+            {offer.cv_count} CV
+          </span>
+        </div>
+
+        {offer.skills.length > 0 ? (
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {offer.skills.slice(0, 6).map((s) => (
+              <span
+                key={s.skill_name}
+                className="inline-flex items-center rounded-full bg-indigo-soft/70 px-2.5 py-1 text-xs font-medium text-indigo-deep"
+              >
+                {s.skill_name}
+              </span>
+            ))}
+            {offer.skills.length > 6 ? (
+              <span className="inline-flex items-center rounded-full bg-surface-sunk px-2.5 py-1 text-xs text-ink-faint">
+                +{offer.skills.length - 6}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-5 flex items-center justify-end text-sm text-ink-faint">
+        <span className="inline-flex items-center gap-1 transition-colors group-hover:text-ink">
+          Ouvrir
+          <ArrowUpRight className="h-4 w-4" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="bento-tile mesh-accent flex flex-col items-center justify-center px-6 py-16 text-center">
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/70 text-indigo-deep">
+        <Briefcase className="h-6 w-6" />
+      </span>
+      <h3 className="mt-6 font-display text-2xl tracking-[-0.015em]">
+        Aucune offre pour l&rsquo;instant.
+      </h3>
+      <p className="mt-2 max-w-sm text-sm text-ink-soft">
+        Créez votre première offre — c&rsquo;est la première étape avant de pouvoir
+        uploader et classer des CV.
+      </p>
+      <Link
+        href="/offers/new"
+        className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white transition-transform hover:-translate-y-px focus-ring"
+      >
+        <Plus className="h-4 w-4" /> Créer une offre
+      </Link>
+    </div>
   );
 }
