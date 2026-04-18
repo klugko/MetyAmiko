@@ -288,4 +288,6 @@ Les matchings et CV sont lies aux offres. Supprimer en dur casserait les referen
 
 ## Licence
 
-Ce projet est prive. Tous droits reserves.
+Ce projet est distribue sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour le texte complet.
+
+En bref : vous pouvez utiliser, copier, modifier et redistribuer le code, y compris a des fins commerciales, tant que l'avis de copyright et la licence sont conserves. Aucune garantie n'est fournie.
