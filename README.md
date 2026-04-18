@@ -96,10 +96,10 @@ pip install -r requirements.txt
 alembic upgrade head
 
 # Lancer le serveur
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8002
 ```
 
-L'API est disponible sur `http://localhost:8000`. La doc Swagger est sur `http://localhost:8000/docs`.
+L'API est disponible sur `http://localhost:8002`. La doc Swagger est sur `http://localhost:8002/docs`.
 
 ### 5. Lancer le frontend
 
