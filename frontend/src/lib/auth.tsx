@@ -25,12 +25,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
-  const [loading, setLoading] = useState(hasToken);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (!hasToken) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- no token, finish loading
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     api
       .get("/auth/me")
@@ -38,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => localStorage.removeItem("token"))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [hasToken]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     const res = await api.post("/auth/login", { email, password });

@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -29,55 +29,101 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="border-slate-700/50 bg-slate-800/80 backdrop-blur-lg shadow-2xl">
-      <CardHeader className="text-center space-y-2">
-        <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow-lg shadow-indigo-500/30">
-          M
-        </div>
-        <CardTitle className="text-2xl font-bold text-white">MetyAmiko</CardTitle>
-        <CardDescription className="text-slate-400">
-          Connectez-vous à votre espace recruteur
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-slate-300">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="vous@entreprise.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-slate-300">Mot de passe</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500"
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white" disabled={loading}>
-            {loading ? "Connexion..." : "Se connecter"}
-          </Button>
-          <p className="text-sm text-slate-400">
-            Pas encore de compte ?{" "}
-            <Link href="/register" className="text-indigo-400 hover:text-indigo-300 underline">
-              Créer un compte
-            </Link>
-          </p>
-        </CardFooter>
+    <div className="bento-tile p-8 sm:p-10">
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">
+          Espace recruteur
+        </p>
+        <h1 className="mt-3 font-display text-[2.5rem] leading-[1] tracking-[-0.015em]">
+          Bon retour.
+        </h1>
+        <p className="mt-3 text-sm text-ink-soft">
+          Connectez-vous pour retrouver vos offres et matchings.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        <Field
+          id="email"
+          label="Email"
+          type="email"
+          placeholder="vous@entreprise.com"
+          value={email}
+          onChange={(v) => setEmail(v)}
+          required
+        />
+        <Field
+          id="password"
+          label="Mot de passe"
+          type="password"
+          placeholder="••••••••"
+          value={password}
+          onChange={(v) => setPassword(v)}
+          required
+        />
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="h-12 w-full rounded-full bg-ink text-white hover:bg-ink/90"
+        >
+          {loading ? "Connexion…" : (
+            <>
+              Se connecter <ArrowRight className="ml-1 h-4 w-4" />
+            </>
+          )}
+        </Button>
       </form>
-    </Card>
+
+      <div className="noise-divider my-8" />
+
+      <p className="text-sm text-ink-soft">
+        Pas encore de compte ?{" "}
+        <Link
+          href="/register"
+          className="font-medium text-indigo-deep underline-offset-4 hover:underline"
+        >
+          Créer un compte
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+function Field({
+  id,
+  label,
+  type,
+  placeholder,
+  value,
+  onChange,
+  required,
+}: {
+  id: string;
+  label: string;
+  type: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label
+        htmlFor={id}
+        className="text-[11px] uppercase tracking-[0.16em] text-ink-faint"
+      >
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        className="h-12 rounded-2xl border-hairline bg-surface-sunk text-ink placeholder:text-ink-faint focus-visible:border-indigo focus-visible:ring-indigo/20"
+      />
+    </div>
   );
 }

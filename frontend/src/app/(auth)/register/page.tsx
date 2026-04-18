@@ -6,13 +6,22 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ArrowRight } from "lucide-react";
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", confirm: "", company: "" });
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    confirm: "",
+    company: "",
+  });
   const [loading, setLoading] = useState(false);
+
+  const update = (field: string, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,61 +43,137 @@ export default function RegisterPage() {
       });
       toast.success("Compte créé avec succès");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Erreur lors de l'inscription";
+      const msg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data
+          ?.detail || "Erreur lors de l'inscription";
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
-
   return (
-    <Card className="border-slate-700/50 bg-slate-800/80 backdrop-blur-lg shadow-2xl">
-      <CardHeader className="text-center space-y-2">
-        <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-2xl font-black text-white shadow-lg shadow-indigo-500/30">
-          M
+    <div className="bento-tile p-8 sm:p-10">
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">
+          Nouveau compte
+        </p>
+        <h1 className="mt-3 font-display text-[2.5rem] leading-[1] tracking-[-0.015em]">
+          Créons-le <span className="italic text-indigo-deep">ensemble</span>.
+        </h1>
+        <p className="mt-3 text-sm text-ink-soft">
+          Deux minutes, un seul mot de passe, et c&rsquo;est parti.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+        <Field
+          id="full_name"
+          label="Nom complet"
+          value={form.full_name}
+          onChange={(v) => update("full_name", v)}
+          placeholder="Jean Dupont"
+          required
+        />
+        <Field
+          id="email"
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(v) => update("email", v)}
+          placeholder="vous@entreprise.com"
+          required
+        />
+        <Field
+          id="company"
+          label="Entreprise"
+          value={form.company}
+          onChange={(v) => update("company", v)}
+          placeholder="Optionnel"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <Field
+            id="password"
+            label="Mot de passe"
+            type="password"
+            value={form.password}
+            onChange={(v) => update("password", v)}
+            placeholder="Min. 8 caractères"
+            required
+          />
+          <Field
+            id="confirm"
+            label="Confirmation"
+            type="password"
+            value={form.confirm}
+            onChange={(v) => update("confirm", v)}
+            placeholder="••••••••"
+            required
+          />
         </div>
-        <CardTitle className="text-2xl font-bold text-white">Créer un compte</CardTitle>
-        <CardDescription className="text-slate-400">
-          Rejoignez MetyAmiko pour optimiser vos recrutements
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="full_name" className="text-slate-300">Nom complet</Label>
-            <Input id="full_name" value={form.full_name} onChange={(e) => update("full_name", e.target.value)} required className="border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500" placeholder="Jean Dupont" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-slate-300">Email</Label>
-            <Input id="email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} required className="border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500" placeholder="vous@entreprise.com" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="company" className="text-slate-300">Entreprise (optionnel)</Label>
-            <Input id="company" value={form.company} onChange={(e) => update("company", e.target.value)} className="border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500" placeholder="Acme Corp" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-slate-300">Mot de passe</Label>
-            <Input id="password" type="password" value={form.password} onChange={(e) => update("password", e.target.value)} required className="border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500" placeholder="Min. 8 caractères" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm" className="text-slate-300">Confirmer le mot de passe</Label>
-            <Input id="confirm" type="password" value={form.confirm} onChange={(e) => update("confirm", e.target.value)} required className="border-slate-600 bg-slate-700/50 text-white placeholder:text-slate-500" placeholder="••••••••" />
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white" disabled={loading}>
-            {loading ? "Création..." : "Créer mon compte"}
-          </Button>
-          <p className="text-sm text-slate-400">
-            Déjà un compte ?{" "}
-            <Link href="/login" className="text-indigo-400 hover:text-indigo-300 underline">
-              Se connecter
-            </Link>
-          </p>
-        </CardFooter>
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="mt-2 h-12 w-full rounded-full bg-ink text-white hover:bg-ink/90"
+        >
+          {loading ? "Création…" : (
+            <>
+              Créer mon compte <ArrowRight className="ml-1 h-4 w-4" />
+            </>
+          )}
+        </Button>
       </form>
-    </Card>
+
+      <div className="noise-divider my-7" />
+
+      <p className="text-sm text-ink-soft">
+        Déjà un compte ?{" "}
+        <Link
+          href="/login"
+          className="font-medium text-indigo-deep underline-offset-4 hover:underline"
+        >
+          Se connecter
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+function Field({
+  id,
+  label,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  required,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label
+        htmlFor={id}
+        className="text-[11px] uppercase tracking-[0.16em] text-ink-faint"
+      >
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        className="h-12 rounded-2xl border-hairline bg-surface-sunk text-ink placeholder:text-ink-faint focus-visible:border-indigo focus-visible:ring-indigo/20"
+      />
+    </div>
   );
 }
